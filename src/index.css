@@ -1,1 +1,83 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-canvas text-ink-900 font-body antialiased;
+}
+
+h1, h2, h3, h4, h5 {
+  @apply font-display;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #C3CEE0;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A6B4CC;
+}
+
+/* Focus visibility for accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2454E6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #EBEFF5 25%, #F5F7FB 37%, #EBEFF5 63%);
+  background-size: 400px 100%;
+  @apply animate-shimmer;
+}
+
+/* Leaflet overrides for a cleaner govt-portal look */
+.leaflet-container {
+  background: #E9F0FB;
+  font-family: "Inter", sans-serif;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(15,26,46,0.18);
+}
+.state-tooltip {
+  background: #0F1A2E;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.state-tooltip::before {
+  display: none;
+}
+
+@media print {
+  .no-print { display: none !important; }
+}
