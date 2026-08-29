@@ -81,7 +81,7 @@ function FileDropzone({ files, setFiles }) {
               </div>
               <button
                 type="button"
-                onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                onClick={() => setFiles((prev) => (prev[i]?.preview && URL.revokeObjectURL(prev[i].preview), prev.filter((_, idx) => idx !== i)))}
                 className="text-ink-400 hover:text-risk-high"
               >
                 <X size={14} />
