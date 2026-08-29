@@ -1,6 +1,66 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Poppins", ui-sans-serif, sans-serif;
+  --font-body: "Inter", ui-sans-serif, sans-serif;
+
+  --color-navy-50: #EEF2FA;
+  --color-navy-100: #D9E2F5;
+  --color-navy-400: #3E5C99;
+  --color-navy-600: #1B3A73;
+  --color-navy-700: #122B5C;
+  --color-navy-800: #0D2049;
+  --color-navy-900: #0A1833;
+  --color-navy-950: #071224;
+
+  --color-brand-50: #EBF1FF;
+  --color-brand-100: #D6E3FF;
+  --color-brand-200: #AEC6FF;
+  --color-brand-400: #3D6BF0;
+  --color-brand-500: #2454E6;
+  --color-brand-600: #1A42CE;
+  --color-brand-700: #1533A3;
+
+  --color-risk-low: #158A4A;
+  --color-risk-lowBg: #E7F7EE;
+  --color-risk-lowBorder: #B8E9CD;
+  --color-risk-medium: #B26A00;
+  --color-risk-mediumBg: #FFF4DE;
+  --color-risk-mediumBorder: #FBDA9E;
+  --color-risk-high: #C22626;
+  --color-risk-highBg: #FDECEC;
+  --color-risk-highBorder: #F5BFBF;
+
+  --color-saffron: #FF9933;
+  --color-indiagreen: #128A3E;
+  --color-surface: #FFFFFF;
+  --color-canvas: #F3F6FB;
+
+  --color-ink-900: #0F1A2E;
+  --color-ink-700: #33415C;
+  --color-ink-500: #5B6B88;
+  --color-ink-400: #8492AB;
+  --color-ink-200: #DBE2ED;
+  --color-ink-100: #EBEFF5;
+
+  --shadow-card: 0 1px 2px rgba(15,26,46,0.04), 0 4px 16px rgba(15,26,46,0.06);
+  --shadow-cardHover: 0 8px 28px rgba(15,26,46,0.12);
+  --shadow-panel: 0 2px 8px rgba(15,26,46,0.06);
+
+  --radius-xl2: 1.1rem;
+
+  --animate-fadeUp: fadeUp 0.6s ease forwards;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+}
+
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
 
 html {
   scroll-behavior: smooth;
