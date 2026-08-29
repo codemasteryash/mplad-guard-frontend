@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------------------
 // INTEGRATION LAYER
 //
-// Every screen in this app calls functions from this file instead of talking
-// to mock data directly. Right now each function resolves from local mock
+// Intended integration layer: screens should call functions from this file instead of
+// importing mock data directly. Right now each function can resolve from local mock
 // data (with a small artificial delay to feel like a real network call).
 //
 // To wire up the real backend once it's ready:
