@@ -12,16 +12,16 @@ import DashboardPage from "./pages/DashboardPage";
 import ScorecardPage from "./pages/ScorecardPage";
 import RecommendationPage from "./pages/RecommendationPage";
 import ComplaintPage from "./pages/ComplaintPage";
-import PlaceholderPage from "./pages/PlaceholderPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
-// Leaflet is heavy — only load it when the Map page is actually visited.
 const MapPage = lazy(() => import("./pages/MapPage"));
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const AlertsPage = lazy(() => import("./pages/AlertsPage"));
 
-function MapFallback() {
+function PageFallback() {
   return (
-    <div className="flex h-[560px] items-center justify-center rounded-xl2 border border-ink-200 bg-white">
-      <p className="text-sm text-ink-400">Loading map…</p>
+    <div className="flex h-[400px] items-center justify-center rounded-xl2 border border-ink-200 bg-white">
+      <p className="text-sm text-ink-400">Loading…</p>
     </div>
   );
 }
@@ -47,14 +47,28 @@ export default function App() {
                 <Route
                   path="/map"
                   element={
-                    <Suspense fallback={<MapFallback />}>
+                    <Suspense fallback={<PageFallback />}>
                       <MapPage />
                     </Suspense>
                   }
                 />
                 <Route path="/project/:id" element={<ScorecardPage />} />
-                <Route path="/reports" element={<PlaceholderPage />} />
-                <Route path="/alerts" element={<PlaceholderPage />} />
+                <Route
+                  path="/reports"
+                  element={
+                    <Suspense fallback={<PageFallback />}>
+                      <ReportsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/alerts"
+                  element={
+                    <Suspense fallback={<PageFallback />}>
+                      <AlertsPage />
+                    </Suspense>
+                  }
+                />
                 <Route
                   path="/recommendations"
                   element={

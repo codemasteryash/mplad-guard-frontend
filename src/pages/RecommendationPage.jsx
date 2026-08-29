@@ -221,7 +221,7 @@ export default function RecommendationPage() {
                   return (
                     <tr
                       key={r.id}
-                      onClick={() => linkedProject && navigate(`/project/${linkedProject.id}`)}
+                      onClick={() => linkedProject && navigate(`/project/${encodeURIComponent(linkedProject.id)}`)}
                       className={classNames(
                         "border-b border-ink-50",
                         linkedProject ? "cursor-pointer hover:bg-brand-50/40" : ""

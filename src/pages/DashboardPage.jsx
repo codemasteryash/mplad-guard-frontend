@@ -313,7 +313,7 @@ export default function DashboardPage() {
                 {pageProjects.map((p) => (
                   <tr
                     key={p.id}
-                    onClick={() => navigate(`/project/${p.id}`)}
+                    onClick={() => navigate(`/project/${encodeURIComponent(p.id)}`)}
                     className="cursor-pointer border-b border-ink-50 transition-colors hover:bg-brand-50/40"
                   >
                     <td className="px-4 py-3.5 text-ink-700">{p.districtCode}</td>
@@ -336,7 +336,7 @@ export default function DashboardPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/project/${p.id}`);
+                          navigate(`/project/${encodeURIComponent(p.id)}`);
                         }}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 hover:bg-navy-50 hover:text-navy-700"
                         aria-label="View project"

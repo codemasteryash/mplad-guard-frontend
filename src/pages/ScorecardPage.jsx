@@ -60,7 +60,7 @@ export default function ScorecardPage() {
   useEffect(() => {
     setLoading(true);
     const t = setTimeout(() => {
-      setProject(getProjectById(id));
+      setProject(getProjectById(decodeURIComponent(id)));
       setLoading(false);
     }, 450);
     return () => clearTimeout(t);
