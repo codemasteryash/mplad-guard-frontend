@@ -141,7 +141,7 @@ export default function DashboardPage() {
     a.href = url;
     a.download = "mplads_projects_export.csv";
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
     push(`Exported ${filteredProjects.length} projects to CSV`, "success");
   };
 
