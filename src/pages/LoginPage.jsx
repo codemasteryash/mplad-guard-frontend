@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Landmark, UserRound, Users, ArrowLeft, LockKeyhole, CheckSquare, Radar } from "lucide-react";
+import { Landmark, UserRound, Users, Building2, ClipboardCheck, ArrowLeft, LockKeyhole, CheckSquare, Radar } from "lucide-react";
 import { useAuth, ROLES, ROLE_LABELS } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { STATES } from "../data/mockData";
@@ -27,6 +27,18 @@ const ROLE_CARDS = [
     icon: Users,
     title: "Citizen",
     desc: "File complaints and track public grievances",
+  },
+  {
+    role: ROLES.SNA,
+    icon: Building2,
+    title: "State Nodal Agency",
+    desc: "Manage and oversee state-level MPLADS fund allocation",
+  },
+  {
+    role: ROLES.IDA,
+    icon: ClipboardCheck,
+    title: "Implementing District Authority",
+    desc: "Sanction works, assign agencies, and monitor district execution",
   },
 ];
 
@@ -128,6 +140,67 @@ function DistrictAuthorityForm({ onSubmit }) {
   );
 }
 
+function IdaForm({ onSubmit }) {
+  const [form, setForm] = useState({ name: "", employeeId: "", state: "", district: "", designation: "" });
+  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v, ...(k === "state" ? { district: "" } : {}) }));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const districtObj = STATES.find((s) => s.name === form.state)?.districts.find((d) => d.name === form.district);
+    onSubmit({
+      name: form.name,
+      employeeId: form.employeeId,
+      state: form.state,
+      district: form.district,
+      districtCode: districtObj?.code,
+      pincode: districtObj?.pincode,
+      designation: form.designation || "Implementing District Authority",
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <TextField label="Full Name" value={form.name} onChange={set("name")} required placeholder="e.g. Rakesh Sharma" />
+      <TextField label="Employee / Officer ID" value={form.employeeId} onChange={set("employeeId")} required placeholder="e.g. IDA-2026-0451" />
+      <StateSelect value={form.state} onChange={set("state")} required />
+      <DistrictSelect state={form.state} value={form.district} onChange={set("district")} required />
+      <TextField label="Designation (optional)" value={form.designation} onChange={set("designation")} placeholder="e.g. District Collector" />
+      <Button type="submit" className="w-full" size="lg">
+        Login as IDA
+      </Button>
+    </form>
+  );
+}
+
+function SnaForm({ onSubmit }) {
+  const [form, setForm] = useState({ name: "", employeeId: "", state: "", designation: "" });
+  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit({
+      name: form.name,
+      employeeId: form.employeeId,
+      state: form.state,
+      designation: form.designation || "State Nodal Officer",
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <TextField label="Full Name" value={form.name} onChange={set("name")} required placeholder="e.g. Anjali Desai" />
+      <TextField label="Employee / Officer ID" value={form.employeeId} onChange={set("employeeId")} required placeholder="e.g. SNA-2026-0451" />
+      <StateSelect value={form.state} onChange={set("state")} required />
+      <TextField label="Designation (optional)" value={form.designation} onChange={set("designation")} placeholder="e.g. State Nodal Officer" />
+      <Button type="submit" className="w-full" size="lg">
+        Login as SNA
+      </Button>
+    </form>
+  );
+}
+
+
+
 function MpForm({ onSubmit }) {
   const [form, setForm] = useState({ name: "", house: "Lok Sabha", state: "", constituency: "" });
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
@@ -197,10 +270,16 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const defaultRouteForRole = (role) => {
+    if (role === ROLES.SNA) return "/sna/dashboard";
+    if (role === ROLES.IDA) return "/ida/dashboard";
+    return "/dashboard";
+  };
+
   const handleSubmit = (role) => (profile) => {
     login(role, profile);
     push(`Welcome, ${profile.name || "User"}. Logged in as ${ROLE_LABELS[role]}.`, "success");
-    navigate(location.state?.from || "/dashboard", { replace: true });
+    navigate(location.state?.from || defaultRouteForRole(role), { replace: true });
   };
 
   return (
@@ -279,6 +358,8 @@ export default function LoginPage() {
                 {selectedRole === ROLES.DISTRICT_AUTHORITY && <DistrictAuthorityForm onSubmit={handleSubmit(selectedRole)} />}
                 {selectedRole === ROLES.MP && <MpForm onSubmit={handleSubmit(selectedRole)} />}
                 {selectedRole === ROLES.CITIZEN && <CitizenForm onSubmit={handleSubmit(selectedRole)} />}
+                {selectedRole === ROLES.SNA && <SnaForm onSubmit={handleSubmit(selectedRole)} />}
+                {selectedRole === ROLES.IDA && <IdaForm onSubmit={handleSubmit(selectedRole)} />}
               </motion.div>
             )}
           </AnimatePresence>

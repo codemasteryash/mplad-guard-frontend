@@ -8,12 +8,42 @@ import {
   Bell,
   ShieldCheck,
   X,
+  Workflow,
+  Users2,
+  Landmark as LandmarkIcon,
+  AlertTriangle,
+  UserCog,
 } from "lucide-react";
 import { ROLES } from "../../context/AuthContext";
 import { classNames } from "../../utils/format";
 import Logo from "../common/Logo";
 
 function getNavItems(role) {
+  if (role === ROLES.SNA) {
+    return [
+      { label: "Dashboard", to: "/sna/dashboard", icon: LayoutDashboard },
+      { label: "Fund Flow", to: "/sna/fund-flow", icon: Workflow },
+      { label: "MP Allocation", to: "/sna/mp-allocation", icon: Users2 },
+      { label: "District Allocation", to: "/sna/district-allocation", icon: LandmarkIcon },
+      { label: "Projects", to: "/sna/projects", icon: ClipboardList },
+      { label: "Risk Monitoring", to: "/sna/risk", icon: AlertTriangle },
+      { label: "Alerts", to: "/sna/alerts", icon: Bell },
+      { label: "Reports", to: "/sna/reports", icon: FileBarChart },
+    ];
+  }
+
+  if (role === ROLES.IDA) {
+    return [
+      { label: "Dashboard", to: "/ida/dashboard", icon: LayoutDashboard },
+      { label: "Projects", to: "/ida/projects", icon: ClipboardList },
+      { label: "Assign IA", to: "/ida/assign-agency", icon: UserCog },
+      { label: "Risk Monitoring", to: "/ida/risk", icon: AlertTriangle },
+      { label: "Complaints", to: "/ida/complaints", icon: MessageSquareWarning },
+      { label: "Alerts", to: "/ida/alerts", icon: Bell },
+      { label: "Reports", to: "/ida/reports", icon: FileBarChart },
+    ];
+  }
+
   const base = [
     { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
     { label: "Map View", to: "/map", icon: Map },
