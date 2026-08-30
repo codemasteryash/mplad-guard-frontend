@@ -37,6 +37,7 @@ function getNavItems(role) {
       { label: "Dashboard", to: "/ida/dashboard", icon: LayoutDashboard },
       { label: "Projects", to: "/ida/projects", icon: ClipboardList },
       { label: "Assign IA", to: "/ida/assign-agency", icon: UserCog },
+      { label: "Field Verification", to: "/ida/verification", icon: ShieldCheck },
       { label: "Risk Monitoring", to: "/ida/risk", icon: AlertTriangle },
       { label: "Complaints", to: "/ida/complaints", icon: MessageSquareWarning },
       { label: "Alerts", to: "/ida/alerts", icon: Bell },

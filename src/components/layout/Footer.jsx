@@ -24,7 +24,7 @@ export default function Footer() {
         <div>
           <Logo dark />
           <p className="mt-4 max-w-xs text-sm text-white/60">
-            MPLADS Sentinel supports transparent, accountable, and efficient implementation of MPLADS
+            e-Nirikshan supports transparent, accountable, and efficient implementation of MPLADS
             projects across India through AI-assisted monitoring.
           </p>
         </div>
@@ -86,7 +86,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs text-white/40">
-        © {new Date().getFullYear()} MPLADS Sentinel · MoSPI, Government of India. All rights reserved.
+        © {new Date().getFullYear()} e-Nirikshan · MoSPI, Government of India. All rights reserved.
       </div>
     </footer>
   );

@@ -17,7 +17,7 @@ export default function FinalCTA() {
             Together, Let's Build a Stronger &amp; Transparent India
           </h2>
           <p className="mt-4 max-w-md text-ink-500">
-            Join MPLADS Sentinel in ensuring every rupee creates impact and every project builds a
+            Join e-Nirikshan in ensuring every rupee creates impact and every project builds a
             better tomorrow.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">

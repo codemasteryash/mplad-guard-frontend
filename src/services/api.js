@@ -282,3 +282,81 @@ export async function updateComplaintStatusApi(id, status) {
   const { data } = await apiClient.patch(`/complaints/${id}/status`, { status });
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Field Verification — placeholder service methods.
+//
+// Today these are thin passthroughs to DataStoreContext's in-memory/
+// localStorage-backed field verification store (see fieldVerifications /
+// addFieldVerificationUpdate in DataStoreContext.jsx) — this file doesn't
+// hold its own copy of the data, it just gives components one consistent
+// place to call instead of reaching into the context or mockData directly,
+// so the swap to real endpoints later doesn't touch any page.
+//
+// FUTURE AI INTEGRATION (not implemented yet — frontend-ready only):
+// Once the FastAPI AI service is live, `submitFieldVerification` should
+// also trigger server-side image comparison (against prior site photos),
+// anomaly detection on the submitted progress/expenditure numbers, and an
+// updated risk score — the response shape below already anticipates that
+// via the optional `aiAssessment` field, which the UI can render once the
+// backend starts populating it.
+// ---------------------------------------------------------------------------
+
+/**
+ * Real endpoint (suggested): POST /api/ida/projects/:projectId/verification
+ * (multipart/form-data for photos/documents; the Node backend would proxy
+ * the evidence to FastAPI's /verify-evidence endpoint for AI-assisted
+ * comparison and return the combined result.)
+ *
+ * Expected future response shape once AI is wired up:
+ * {
+ *   success: true,
+ *   verificationId,
+ *   status,                 // authority's chosen status (Pending Review/Verified/Flagged)
+ *   aiAssessment: {          // populated by FastAPI later; null/absent today
+ *     imageMatchScore,       // similarity vs. prior geo-tagged site photos
+ *     progressConsistency,   // does claimed progress% match visual evidence
+ *     anomalyFlags: [],      // any AI-detected inconsistencies
+ *     suggestedRiskScore,
+ *   }
+ * }
+ */
+export async function submitFieldVerification(projectId, payload) {
+  if (USE_MOCKS) {
+    await delay(600);
+    // AI assessment intentionally omitted — not implemented yet.
+    return { success: true, verificationId: `FV-${Date.now()}`, projectId, status: payload.status, aiAssessment: null };
+  }
+  const form = new FormData();
+  Object.entries(payload).forEach(([key, value]) => {
+    if ((key === "photos" || key === "documents") && Array.isArray(value)) {
+      value.forEach((f) => form.append(key, f.file || f));
+    } else {
+      form.append(key, value);
+    }
+  });
+  const { data } = await apiClient.post(`/ida/projects/${projectId}/verification`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+/** Real endpoint (suggested): GET /api/ida/projects/:projectId/verification-history */
+export async function fetchFieldVerificationHistory(projectId) {
+  if (USE_MOCKS) {
+    await delay(200);
+    return null; // components read this from DataStoreContext today
+  }
+  const { data } = await apiClient.get(`/ida/projects/${projectId}/verification-history`);
+  return data;
+}
+
+/** Real endpoint (suggested): GET /api/ida/verification-queue?districtCode= */
+export async function fetchVerificationQueue(districtCode) {
+  if (USE_MOCKS) {
+    await delay(200);
+    return getProjectsByDistrictCode(districtCode).filter((p) => p.status === "Work in Progress");
+  }
+  const { data } = await apiClient.get("/ida/verification-queue", { params: { districtCode } });
+  return data;
+}

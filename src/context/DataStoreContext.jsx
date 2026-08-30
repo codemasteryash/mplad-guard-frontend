@@ -8,11 +8,13 @@ import {
   updateProjectExpenditureOverride,
 } from "../data/mockData";
 import { createSeededRandom } from "../utils/seededRandom";
+import { defaultVerificationStatus } from "../data/verificationData";
 
 const DataStoreContext = createContext(null);
 
 const REC_KEY = "mplads_sentinel_recommendations";
 const COMPLAINT_KEY = "mplads_sentinel_complaints";
+const VERIFICATION_KEY = "mplads_sentinel_field_verifications";
 
 function seedRecommendations() {
   const projects = getAllProjects().slice(0, 4);
@@ -104,6 +106,13 @@ export function DataStoreProvider({ children }) {
   const updateComplaintStatus = (id, status) => {
     setComplaints((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
   };
+
+  // ---------------------------------------------------------------------
+  // IDA / project mutation layer (SNA + IDA feature). These wrap the
+  // localStorage-backed override functions in mockData.js and bump
+  // `projectVersion` so any page reading getAllProjects()/getProjectById()
+  // via a `[projectVersion]` dependency re-derives fresh data.
+  // ---------------------------------------------------------------------
   const [projectVersion, setProjectVersion] = useState(0);
   const bumpProjectVersion = () => setProjectVersion((v) => v + 1);
 
@@ -127,6 +136,60 @@ export function DataStoreProvider({ children }) {
     bumpProjectVersion();
   };
 
+  // ---------------------------------------------------------------------
+  // Field Verification store. Keyed by projectId:
+  //   { status: "Not Verified" | "Pending Review" | "Verified" | "Flagged",
+  //     updates: [{ id, date, progressPercent, expenditureAmount, remarks,
+  //                 photos, documents, status, submittedBy }] }
+  // Submitting an update also syncs the project's live progress/expenditure
+  // via the existing IDA mutators above, so Dashboard/Scorecard/Reports
+  // immediately reflect it too — same `projectVersion` refresh mechanism.
+  // ---------------------------------------------------------------------
+  const [fieldVerifications, setFieldVerifications] = useState(() => readOrSeed(VERIFICATION_KEY, () => ({})));
+
+  useEffect(() => {
+    localStorage.setItem(VERIFICATION_KEY, JSON.stringify(fieldVerifications));
+  }, [fieldVerifications]);
+
+  const getVerificationRecord = (projectId, project) =>
+    fieldVerifications[projectId] || { status: project ? defaultVerificationStatus(project) : "Not Verified", updates: [] };
+
+  const addFieldVerificationUpdate = (project, update) => {
+    const cleanPhotos = (update.photos || []).map((f) => ({ name: f.name, size: f.size, preview: f.preview || null }));
+    const cleanDocuments = (update.documents || []).map((f) => ({ name: f.name, size: f.size }));
+
+    const entry = {
+      id: `FV-${Date.now()}`,
+      date: update.verificationDate || new Date().toISOString().slice(0, 10),
+      progressPercent: update.progressPercent,
+      expenditureAmount: update.expenditureAmount,
+      remarks: update.remarks,
+      photos: cleanPhotos,
+      documents: cleanDocuments,
+      status: update.status,
+      submittedBy: update.submittedBy,
+    };
+
+    setFieldVerifications((prev) => {
+      const existing = prev[project.id] || { status: "Not Verified", updates: [] };
+      return {
+        ...prev,
+        [project.id]: { status: update.status, updates: [entry, ...existing.updates] },
+      };
+    });
+
+    // Keep the underlying project's live snapshot in sync so every other
+    // page (Dashboard, Scorecard, Reports) reflects this verification too.
+    updateProjectProgressOverride(project.id, update.progressPercent);
+    if (project.amountAllocated) {
+      const pct = Math.min(100, Math.round((update.expenditureAmount / project.amountAllocated) * 100));
+      updateProjectExpenditureOverride(project.id, pct);
+    }
+    bumpProjectVersion();
+
+    return entry;
+  };
+
   const value = {
     recommendations,
     complaints,
@@ -139,6 +202,9 @@ export function DataStoreProvider({ children }) {
     updateProjectStatus,
     updateProjectProgress,
     updateProjectExpenditure,
+    fieldVerifications,
+    getVerificationRecord,
+    addFieldVerificationUpdate,
   };
 
   return <DataStoreContext.Provider value={value}>{children}</DataStoreContext.Provider>;

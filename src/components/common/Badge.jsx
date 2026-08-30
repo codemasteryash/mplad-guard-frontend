@@ -38,6 +38,10 @@ const STATUS_STYLES = {
   Open: "bg-risk-highBg text-risk-high border-risk-highBorder",
   "Under Review": "bg-risk-mediumBg text-risk-medium border-risk-mediumBorder",
   Resolved: "bg-risk-lowBg text-risk-low border-risk-lowBorder",
+  "Not Verified": "bg-ink-100 text-ink-600 border-ink-200",
+  "Pending Review": "bg-risk-mediumBg text-risk-medium border-risk-mediumBorder",
+  Verified: "bg-risk-lowBg text-risk-low border-risk-lowBorder",
+  Flagged: "bg-risk-highBg text-risk-high border-risk-highBorder",
 };
 
 export function StatusBadge({ status }) {

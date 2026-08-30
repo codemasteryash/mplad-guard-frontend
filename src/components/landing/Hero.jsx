@@ -29,7 +29,7 @@ export default function Hero() {
           </span>
 
           <h1 className="mt-5 font-display text-4xl font-extrabold leading-[1.1] text-navy-900 sm:text-5xl">
-            MPLADS <span className="text-brand-600">AI-Powered</span> Monitoring &amp; Anomaly Detection
+            <span className="text-brand-600">e-Nirikshan</span> — AI-Powered MPLADS Monitoring &amp; Anomaly Detection
           </h1>
 
           <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-500 sm:text-lg">
