@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Menu, X, ArrowRight } from "lucide-react";
-import Logo, { SentinelMark } from "../common/Logo";
+import Logo, { PlatformMark } from "../common/Logo";
 import Button from "../common/Button";
 import { useAuth } from "../../context/AuthContext";
 import { classNames } from "../../utils/format";
@@ -38,7 +38,7 @@ export default function PublicNavbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-3">
           <Logo />
-          <SentinelMark />
+          <PlatformMark />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">

@@ -289,7 +289,7 @@ export default function LoginPage() {
         <div className="relative z-10">
           <Logo dark />
           <h2 className="mt-14 font-display text-3xl font-bold leading-snug">
-            MPLADS Monitoring System
+            e-Nirikshan
           </h2>
           <p className="mt-3 max-w-xs text-sm text-white/60">Sign in to continue to your role-based dashboard.</p>
           <ul className="mt-8 space-y-3 text-sm text-white/80">
@@ -317,7 +317,7 @@ export default function LoginPage() {
             {!selectedRole ? (
               <motion.div key="select" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}>
                 <h1 className="font-display text-2xl font-bold text-ink-900">Sign in to continue</h1>
-                <p className="mt-1.5 text-sm text-ink-500">Choose how you'd like to access MPLADS Sentinel.</p>
+                <p className="mt-1.5 text-sm text-ink-500">Choose how you'd like to access e-Nirikshan.</p>
 
                 <div className="mt-7 space-y-3">
                   {ROLE_CARDS.map((c) => (

@@ -31,6 +31,8 @@ const IdaProjectDetailPage = lazy(() => import("./pages/ida/IdaProjectDetailPage
 const IdaAssignAgencyPage = lazy(() => import("./pages/ida/IdaAssignAgencyPage"));
 const IdaRiskPage = lazy(() => import("./pages/ida/IdaRiskPage"));
 const IdaComplaintsPage = lazy(() => import("./pages/ida/IdaComplaintsPage"));
+const FieldVerificationPage = lazy(() => import("./pages/ida/FieldVerificationPage"));
+const FieldVerificationDetailPage = lazy(() => import("./pages/ida/FieldVerificationDetailPage"));
 
 function PageFallback() {
   return (
@@ -61,6 +63,7 @@ export default function App() {
                   </ProtectedRoute>
                 }
               >
+                {/* --- Existing routes (unchanged) --- */}
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route
                   path="/map"
@@ -104,6 +107,7 @@ export default function App() {
                   }
                 />
 
+                {/* --- SNA routes --- */}
                 <Route
                   path="/sna/dashboard"
                   element={
@@ -183,6 +187,7 @@ export default function App() {
                   }
                 />
 
+                {/* --- IDA routes --- */}
                 <Route
                   path="/ida/dashboard"
                   element={
@@ -239,6 +244,26 @@ export default function App() {
                     <ProtectedRoute allowedRoles={[ROLES.IDA, ROLES.ADMIN]}>
                       <Lazy>
                         <IdaComplaintsPage />
+                      </Lazy>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ida/verification"
+                  element={
+                    <ProtectedRoute allowedRoles={[ROLES.IDA, ROLES.ADMIN]}>
+                      <Lazy>
+                        <FieldVerificationPage />
+                      </Lazy>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ida/verification/:projectId"
+                  element={
+                    <ProtectedRoute allowedRoles={[ROLES.IDA, ROLES.ADMIN]}>
+                      <Lazy>
+                        <FieldVerificationDetailPage />
                       </Lazy>
                     </ProtectedRoute>
                   }
