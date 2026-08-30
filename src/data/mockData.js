@@ -9,12 +9,6 @@ import {
 import { createSeededRandom } from "../utils/seededRandom";
 import { riskLevelFromScore } from "../utils/format";
 
-// ---------------------------------------------------------------------------
-// NOTE FOR INTEGRATION: everything in this file is a stand-in for the real
-// FastAPI anomaly-detection / risk-scoring service. `getScorecardForProject`
-// is the single function to swap for a real API call — its return shape is
-// the "contract" the rest of the UI depends on. See src/services/api.js.
-// ---------------------------------------------------------------------------
 
 const YEAR_POOL = [2022, 2023, 2024, 2025];
 
@@ -150,10 +144,70 @@ function generateProject(index) {
 const TOTAL_MOCK_PROJECTS = 620;
 
 let _cache = null;
-export function getAllProjects() {
+function getBaseProjects() {
   if (_cache) return _cache;
   _cache = Array.from({ length: TOTAL_MOCK_PROJECTS }, (_, i) => generateProject(i));
   return _cache;
+}
+
+const OVERRIDES_KEY = "mplads_sentinel_project_overrides";
+
+function readOverrides() {
+  try {
+    const raw = localStorage.getItem(OVERRIDES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeOverrides(overrides) {
+  try {
+    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(overrides));
+  } catch {
+    // ignore quota/storage errors — overrides just won't persist this session
+  }
+}
+
+function applyOverride(project) {
+  const overrides = readOverrides();
+  const patch = overrides[project.id];
+  return patch ? { ...project, ...patch } : project;
+}
+
+function setProjectOverride(projectId, patch) {
+  const overrides = readOverrides();
+  const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined && v !== ""));
+  overrides[projectId] = { ...(overrides[projectId] || {}), ...clean };
+  writeOverrides(overrides);
+}
+
+export function assignImplementingAgency(projectId, assignment) {
+  setProjectOverride(projectId, {
+    assignedIA: assignment.agency,
+    iaOfficer: assignment.iaOfficer,
+    iaAssignedOn: new Date().toISOString().slice(0, 10),
+    expectedStartDate: assignment.expectedStartDate,
+    expectedCompletionDate: assignment.expectedCompletionDate,
+    iaNotes: assignment.notes,
+    status: "Work in Progress",
+  });
+}
+
+export function updateProjectStatusOverride(projectId, status) {
+  setProjectOverride(projectId, { status });
+}
+
+export function updateProjectProgressOverride(projectId, progressPercent) {
+  setProjectOverride(projectId, { progressPercent });
+}
+
+export function updateProjectExpenditureOverride(projectId, expenditurePercent) {
+  setProjectOverride(projectId, { expenditurePercent });
+}
+
+export function getAllProjects() {
+  return getBaseProjects().map(applyOverride);
 }
 
 export function getProjectById(id) {

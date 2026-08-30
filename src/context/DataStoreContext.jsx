@@ -1,5 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { STATES, getAllProjects } from "../data/mockData";
+import {
+  STATES,
+  getAllProjects,
+  assignImplementingAgency as assignIAInData,
+  updateProjectStatusOverride,
+  updateProjectProgressOverride,
+  updateProjectExpenditureOverride,
+} from "../data/mockData";
 import { createSeededRandom } from "../utils/seededRandom";
 
 const DataStoreContext = createContext(null);
@@ -97,8 +104,42 @@ export function DataStoreProvider({ children }) {
   const updateComplaintStatus = (id, status) => {
     setComplaints((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
   };
+  const [projectVersion, setProjectVersion] = useState(0);
+  const bumpProjectVersion = () => setProjectVersion((v) => v + 1);
 
-  const value = { recommendations, complaints, addRecommendation, addComplaint, updateComplaintStatus, STATES };
+  const assignImplementingAgency = (projectId, assignment) => {
+    assignIAInData(projectId, assignment);
+    bumpProjectVersion();
+  };
+
+  const updateProjectStatus = (projectId, status) => {
+    updateProjectStatusOverride(projectId, status);
+    bumpProjectVersion();
+  };
+
+  const updateProjectProgress = (projectId, progressPercent) => {
+    updateProjectProgressOverride(projectId, progressPercent);
+    bumpProjectVersion();
+  };
+
+  const updateProjectExpenditure = (projectId, expenditurePercent) => {
+    updateProjectExpenditureOverride(projectId, expenditurePercent);
+    bumpProjectVersion();
+  };
+
+  const value = {
+    recommendations,
+    complaints,
+    addRecommendation,
+    addComplaint,
+    updateComplaintStatus,
+    STATES,
+    projectVersion,
+    assignImplementingAgency,
+    updateProjectStatus,
+    updateProjectProgress,
+    updateProjectExpenditure,
+  };
 
   return <DataStoreContext.Provider value={value}>{children}</DataStoreContext.Provider>;
 }

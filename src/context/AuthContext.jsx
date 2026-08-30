@@ -7,12 +7,20 @@ export const ROLES = {
   DISTRICT_AUTHORITY: "district_authority",
   MP: "mp",
   CITIZEN: "citizen",
+  SNA: "sna",
+  IDA: "ida",
+  IA: "ia",
+  ADMIN: "admin",
 };
 
 export const ROLE_LABELS = {
   [ROLES.DISTRICT_AUTHORITY]: "District Authority",
   [ROLES.MP]: "Member of Parliament",
   [ROLES.CITIZEN]: "Citizen",
+  [ROLES.SNA]: "State Nodal Agency",
+  [ROLES.IDA]: "Implementing District Authority",
+  [ROLES.IA]: "Implementing Agency",
+  [ROLES.ADMIN]: "Administrator",
 };
 
 function readStoredSession() {

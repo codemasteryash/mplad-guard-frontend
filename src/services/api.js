@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------------------
 // INTEGRATION LAYER
 //
-// Intended integration layer: screens should call functions from this file instead of
-// importing mock data directly. Right now each function can resolve from local mock
+// Every screen in this app calls functions from this file instead of talking
+// to mock data directly. Right now each function resolves from local mock
 // data (with a small artificial delay to feel like a real network call).
 //
 // To wire up the real backend once it's ready:
@@ -21,7 +21,11 @@ import {
   getProjectById,
   getStateRiskSummary,
   getSummaryStats,
+  getProjectsByDistrictCode,
+  assignImplementingAgency as assignIAInData,
 } from "../data/mockData";
+import { getStateFundSummary, getMpRosterByState, getSnaAlerts } from "../data/snaData";
+import { getDistrictSummary, IDA_AGENCY_OPTIONS } from "../data/idaData";
 
 const USE_MOCKS = true;
 
@@ -152,5 +156,129 @@ export async function submitComplaint(payload) {
   const { data } = await apiClient.post("/complaints", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// SNA (State Nodal Agency) — placeholder service methods.
+// Backed by src/data/snaData.js today; swap the body for a real API call
+// once the Node backend exposes these endpoints. Return shapes match what
+// src/pages/sna/* already consume.
+// ---------------------------------------------------------------------------
+
+/** Real endpoint (suggested): GET /api/sna/dashboard?state= */
+export async function getSnaDashboard(state) {
+  if (USE_MOCKS) {
+    await delay(300);
+    return getStateFundSummary(state);
+  }
+  const { data } = await apiClient.get("/sna/dashboard", { params: { state } });
+  return data;
+}
+
+/** Real endpoint (suggested): GET /api/sna/state-fund-allocation?state= */
+export async function getStateFundAllocation(state) {
+  if (USE_MOCKS) {
+    await delay(300);
+    return getStateFundSummary(state);
+  }
+  const { data } = await apiClient.get("/sna/state-fund-allocation", { params: { state } });
+  return data;
+}
+
+/** Real endpoint (suggested): GET /api/sna/mp-fund-allocation?state= */
+export async function getMpFundAllocation(state) {
+  if (USE_MOCKS) {
+    await delay(300);
+    return getMpRosterByState(state);
+  }
+  const { data } = await apiClient.get("/sna/mp-fund-allocation", { params: { state } });
+  return data;
+}
+
+/** Real endpoint (suggested): GET /api/sna/district-fund-allocation?state= */
+export async function getDistrictFundAllocation(state) {
+  if (USE_MOCKS) {
+    await delay(300);
+    return getMpRosterByState(state); // 1:1 district/constituency in this prototype
+  }
+  const { data } = await apiClient.get("/sna/district-fund-allocation", { params: { state } });
+  return data;
+}
+
+/** Real endpoint (suggested): GET /api/sna/alerts?state= */
+export async function getSnaAlertsList(state) {
+  if (USE_MOCKS) {
+    await delay(300);
+    return getSnaAlerts(state);
+  }
+  const { data } = await apiClient.get("/sna/alerts", { params: { state } });
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// IDA (Implementing District Authority) — placeholder service methods.
+// Backed by src/data/idaData.js + the project override layer in
+// src/data/mockData.js today; swap for real API calls when ready.
+// ---------------------------------------------------------------------------
+
+/** Real endpoint (suggested): GET /api/ida/dashboard?districtCode= */
+export async function getIdaDashboard(districtCode) {
+  if (USE_MOCKS) {
+    await delay(300);
+    return getDistrictSummary(districtCode);
+  }
+  const { data } = await apiClient.get("/ida/dashboard", { params: { districtCode } });
+  return data;
+}
+
+/** Real endpoint (suggested): GET /api/ida/projects?districtCode= */
+export async function getDistrictProjects(districtCode) {
+  if (USE_MOCKS) {
+    await delay(300);
+    return getProjectsByDistrictCode(districtCode);
+  }
+  const { data } = await apiClient.get("/ida/projects", { params: { districtCode } });
+  return data;
+}
+
+/** Real endpoint (suggested): GET /api/ida/implementing-agencies */
+export async function getImplementingAgencies() {
+  if (USE_MOCKS) {
+    await delay(150);
+    return IDA_AGENCY_OPTIONS;
+  }
+  const { data } = await apiClient.get("/ida/implementing-agencies");
+  return data;
+}
+
+/** Real endpoint (suggested): POST /api/ida/projects/:projectId/assign-agency */
+export async function assignImplementingAgency(projectId, assignment) {
+  if (USE_MOCKS) {
+    await delay(400);
+    assignIAInData(projectId, assignment);
+    return { success: true, projectId, ...assignment };
+  }
+  const { data } = await apiClient.post(`/ida/projects/${projectId}/assign-agency`, assignment);
+  return data;
+}
+
+/** Real endpoint (suggested): GET /api/ida/complaints?districtCode= (delegates to existing complaint state) */
+export async function getDistrictComplaints(districtCode, allComplaints) {
+  if (USE_MOCKS) {
+    await delay(200);
+    return allComplaints.filter((c) => c.districtCode === districtCode);
+  }
+  const { data } = await apiClient.get("/ida/complaints", { params: { districtCode } });
+  return data;
+}
+
+/** Real endpoint (suggested): PATCH /api/complaints/:id/status (same endpoint as the existing complaint flow) */
+export async function updateComplaintStatusApi(id, status) {
+  if (USE_MOCKS) {
+    await delay(200);
+    return { success: true, id, status };
+  }
+  const { data } = await apiClient.patch(`/complaints/${id}/status`, { status });
   return data;
 }

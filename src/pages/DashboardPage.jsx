@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const scopedProjects = useMemo(() => {
     if (role === ROLES.DISTRICT_AUTHORITY) return getProjectsByDistrictCode(profile?.districtCode);
     if (role === ROLES.MP) return getProjectsByState(profile?.state);
+    if (role === ROLES.SNA) return getProjectsByState(profile?.state);
     if (role === ROLES.CITIZEN) {
       if (citizenLevel === "district" && citizenDistrictCode) {
         return getAllProjects().filter((p) => p.districtCode === citizenDistrictCode);
@@ -141,7 +142,7 @@ export default function DashboardPage() {
     a.href = url;
     a.download = "mplads_projects_export.csv";
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    URL.revokeObjectURL(url);
     push(`Exported ${filteredProjects.length} projects to CSV`, "success");
   };
 
@@ -150,6 +151,8 @@ export default function DashboardPage() {
       ? `${profile?.district || ""} District`
       : role === ROLES.MP
       ? `${profile?.state || ""} — All Constituency Districts`
+      : role === ROLES.SNA
+      ? `${profile?.state || ""} — State Project Overview`
       : citizenLevel === "district"
       ? STATES.flatMap((s) => s.districts).find((d) => d.code === citizenDistrictCode)?.name || "Select a district"
       : citizenLevel === "state"
