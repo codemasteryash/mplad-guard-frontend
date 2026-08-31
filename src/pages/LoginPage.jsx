@@ -37,8 +37,8 @@ const ROLE_CARDS = [
   {
     role: ROLES.IDA,
     icon: ClipboardCheck,
-    title: "Implementing District Authority",
-    desc: "Sanction works, assign agencies, and monitor district execution",
+    title: "Implementing Agencies",
+    desc: "Body Responsible For The Actual Ground-Level Execution",
   },
 ];
 
