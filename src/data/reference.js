@@ -1,6 +1,3 @@
-// Reference data modelled on real MPLADS/eSAKSHI structure (state -> districts
-// with district codes, standard Implementing Agencies, and typical work
-// categories sanctioned under the scheme).
 
 export const STATES = [
   {
@@ -129,7 +126,7 @@ export const STATES = [
     districts: [
       { name: "Kamrup Metropolitan", code: "18001", pincode: "781001" },
       { name: "Dibrugarh", code: "18002", pincode: "786001" },
-      { name: "Silchar", code: "18003", pincode: "788001" },
+      { name: "Cachar", code: "18003", pincode: "788001" },
     ],
   },
   {

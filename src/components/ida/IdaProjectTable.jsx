@@ -16,7 +16,7 @@ function mpNameForDistrict(districtCode) {
   return _mpByDistrict[districtCode] || "—";
 }
 
-export default function IdaProjectTable({ projects, onAssign, onFlag }) {
+export default function IdaProjectTable({ projects, onAssign, onFlag, showAssign = true }) {
   const navigate = useNavigate();
 
   if (projects.length === 0) {
@@ -83,14 +83,16 @@ export default function IdaProjectTable({ projects, onAssign, onFlag }) {
                   >
                     <Eye size={15} />
                   </button>
-                  <button
-                    onClick={() => onAssign(p)}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-400 hover:bg-brand-50 hover:text-brand-600"
-                    aria-label="Assign implementing agency"
-                    title="Assign IA"
-                  >
-                    <UserCog size={15} />
-                  </button>
+                  {showAssign && (
+                    <button
+                      onClick={() => onAssign(p)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-400 hover:bg-brand-50 hover:text-brand-600"
+                      aria-label="Assign implementing agency"
+                      title="Assign IA"
+                    >
+                      <UserCog size={15} />
+                    </button>
+                  )}
                   <button
                     onClick={() => onFlag(p)}
                     className={classNames(

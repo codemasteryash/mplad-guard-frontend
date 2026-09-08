@@ -1,16 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ChevronRight, ArrowLeft, Info, UserCog, MessageSquareWarning } from "lucide-react";
+import { ChevronRight, ArrowLeft, Info, MessageSquareWarning } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useDataStore } from "../../context/DataStoreContext";
-import { useToast } from "../../context/ToastContext";
 import { getProjectById } from "../../data/mockData";
 import { formatFullINR, formatDate, classNames } from "../../utils/format";
 import { StatusBadge } from "../../components/common/Badge";
 import RiskGauge from "../../components/common/RiskGauge";
 import { EmptyState } from "../../components/common/EmptyState";
 import Button from "../../components/common/Button";
-import AssignIAModal from "../../components/ida/AssignIAModal";
 
 const BREAKDOWN_LABELS = {
   financial: "Financial Anomalies",
@@ -24,9 +22,7 @@ export default function IdaProjectDetailPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { complaints, assignImplementingAgency, projectVersion } = useDataStore();
-  const { push } = useToast();
-  const [assignOpen, setAssignOpen] = useState(false);
+  const { complaints, projectVersion } = useDataStore();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const project = useMemo(() => getProjectById(decodeURIComponent(projectId)), [projectId, projectVersion]);
@@ -47,12 +43,6 @@ export default function IdaProjectDetailPage() {
     );
   }
 
-  const handleAssign = (id, assignment) => {
-    assignImplementingAgency(id, assignment);
-    setAssignOpen(false);
-    push(`Implementing Agency assigned successfully — ${assignment.agency}`, "success");
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -62,16 +52,13 @@ export default function IdaProjectDetailPage() {
           </button>
           <div className="flex items-center gap-1.5 text-xs text-ink-400">
             <Link to="/ida/projects" className="hover:text-brand-600">
-              District Projects
+              Assigned Projects
             </Link>
             <ChevronRight size={12} />
             <span className="font-semibold text-ink-700">{project.projectId}</span>
           </div>
           <h1 className="mt-1 font-display text-2xl font-bold text-ink-900">Project Overview</h1>
         </div>
-        <Button icon={UserCog} onClick={() => setAssignOpen(true)}>
-          {project.iaAssignedOn ? "Reassign Agency" : "Assign IA"}
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -86,8 +73,8 @@ export default function IdaProjectDetailPage() {
               ["Pincode", project.pincode],
               ["Constituency", project.district],
               ["MP", project.recommendingMP],
-              ["IDA", profile?.name || "Implementing District Authority"],
               ["Implementing Agency", project.assignedIA],
+              ["Field Officer", profile?.name || "Implementing Agency Officer"],
             ].map(([label, value]) => (
               <div key={label} className="flex items-center justify-between gap-4 border-b border-ink-50 pb-2.5">
                 <dt className="text-ink-500">{label}</dt>
@@ -209,8 +196,6 @@ export default function IdaProjectDetailPage() {
           </div>
         )}
       </div>
-
-      <AssignIAModal open={assignOpen} project={project} onClose={() => setAssignOpen(false)} onAssign={handleAssign} />
     </div>
   );
 }
