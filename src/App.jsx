@@ -221,7 +221,7 @@ export default function App() {
                 <Route
                   path="/ida/assign-agency"
                   element={
-                    <ProtectedRoute allowedRoles={[ROLES.IDA, ROLES.ADMIN]}>
+                    <ProtectedRoute allowedRoles={[ROLES.DISTRICT_AUTHORITY, ROLES.ADMIN]}>
                       <Lazy>
                         <IdaAssignAgencyPage />
                       </Lazy>

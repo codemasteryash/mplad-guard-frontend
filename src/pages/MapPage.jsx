@@ -1,27 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { MapContainer, GeoJSON, ZoomControl, useMap } from "react-leaflet";
+import { MapContainer, GeoJSON, Marker, Popup, ZoomControl, useMap } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { ChevronRight, MapPin, Layers, Search, Maximize2, X } from "lucide-react";
+import { ChevronRight, MapPin, Layers, Search, Maximize2, X, Loader2 } from "lucide-react";
 import indiaStatesGeo from "../data/indiaStates.geo.json";
+import { loadDistrictGeo } from "../data/districtGeo";
 import { STATES, getStateRiskSummary, getProjectsByDistrictCode, getSummaryStats } from "../data/mockData";
 import Button from "../components/common/Button";
 import { RiskBadge } from "../components/common/Badge";
-import { classNames } from "../utils/format";
 
 // Vivid, high-contrast risk palette (brighter than the rest of the app's
 // subtler badge colors, on purpose — this is the map's whole visual story).
 const RISK_FILL = { Low: "#16D971", Medium: "#FFA512", High: "#FF3B4E" };
 const RISK_FILL_DIM = { Low: "#8FE8B8", Medium: "#FFD599", High: "#FFAEB5" };
+const NO_DATA_FILL = "#D8DEE9";
 
-// Real bounding box of India (derived from the same boundary data used for
-// the choropleth) — keeps the map framed on India only, no world backdrop,
-// and no panning off into empty ocean.
+// Real bounding box of India — keeps the map framed on India only, no world
+// backdrop, and no panning off into empty ocean.
 const INDIA_BOUNDS = [
   [6.0, 67.5],
   [37.6, 98.2],
 ];
+
+function riskLevelOf(score) {
+  if (score >= 65) return "High";
+  if (score >= 35) return "Medium";
+  return "Low";
+}
 
 function districtRiskList(stateName) {
   const state = STATES.find((s) => s.name === stateName);
@@ -29,7 +36,22 @@ function districtRiskList(stateName) {
   return state.districts.map((d) => {
     const projects = getProjectsByDistrictCode(d.code);
     const stats = getSummaryStats(projects);
-    return { ...d, avgRisk: stats.avgRisk, count: stats.total };
+    return { ...d, avgRisk: stats.avgRisk, count: stats.total, level: riskLevelOf(stats.avgRisk) };
+  });
+}
+
+function pinIcon(color) {
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+        <span class="animate-ping" style="position:absolute;height:26px;width:26px;border-radius:9999px;opacity:0.55;background:${color};"></span>
+        <span style="position:relative;height:16px;width:16px;border-radius:9999px;background:${color};border:2.5px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);"></span>
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -18],
   });
 }
 
@@ -50,7 +72,11 @@ export default function MapPage() {
   const mapRef = useRef(null);
   const [selectedState, setSelectedState] = useState(location.state?.presetState || "");
   const [hoveredState, setHoveredState] = useState(null);
+  const [hoveredDistrict, setHoveredDistrict] = useState(null);
   const [search, setSearch] = useState("");
+  const [districtGeoJson, setDistrictGeoJson] = useState(null);
+  const [districtLoading, setDistrictLoading] = useState(false);
+  const [pin, setPin] = useState(null);
 
   const riskSummary = useMemo(() => getStateRiskSummary(), []);
 
@@ -70,6 +96,16 @@ export default function MapPage() {
 
   const districtTotal = STATES.reduce((s, st) => s + st.districts.length, 0);
 
+  const districts = selectedState ? districtRiskList(selectedState) : [];
+  const districtRiskMap = useMemo(() => {
+    const map = {};
+    districts.forEach((d) => {
+      map[d.name] = d;
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedState]);
+
   const flyToState = (stateName) => {
     if (!geoRef.current || !mapRef.current) return;
     geoRef.current.eachLayer((layer) => {
@@ -81,12 +117,27 @@ export default function MapPage() {
 
   const resetView = () => {
     setSelectedState("");
+    setDistrictGeoJson(null);
+    setPin(null);
     mapRef.current?.flyToBounds(INDIA_BOUNDS, { padding: [10, 10], duration: 0.6 });
   };
 
   const selectState = (stateName) => {
     setSelectedState(stateName);
-    if (stateName) flyToState(stateName);
+    setPin(null);
+    setDistrictGeoJson(null);
+    if (!stateName) return;
+    flyToState(stateName);
+    setDistrictLoading(true);
+    loadDistrictGeo(stateName).then((data) => {
+      setDistrictGeoJson(data);
+      setDistrictLoading(false);
+    });
+  };
+
+  const focusDistrict = (districtInfo, bounds) => {
+    setPin({ ...districtInfo, center: bounds.getCenter() });
+    mapRef.current?.flyToBounds(bounds, { padding: [90, 90], duration: 0.6, maxZoom: 9.5 });
   };
 
   function styleFeature(feature) {
@@ -98,7 +149,7 @@ export default function MapPage() {
     const palette = dimmed ? RISK_FILL_DIM : RISK_FILL;
     return {
       fillColor: bucket ? palette[bucket.riskLevel] : "#CBD5E1",
-      fillOpacity: isSelected || isHovered ? 0.95 : dimmed ? 0.55 : 0.85,
+      fillOpacity: isSelected || isHovered ? 0.95 : dimmed ? 0.5 : 0.85,
       color: isSelected ? "#0A1833" : isHovered ? "#1B3A73" : "#ffffff",
       weight: isSelected ? 3 : isHovered ? 2.5 : 1.2,
     };
@@ -121,7 +172,44 @@ export default function MapPage() {
     });
   }
 
-  const districts = selectedState ? districtRiskList(selectedState) : [];
+  function styleDistrictFeature(feature) {
+    const matched = feature.properties.matched;
+    const info = matched ? districtRiskMap[matched] : null;
+    const isHovered = hoveredDistrict === matched;
+    const isPinned = pin?.name === matched;
+    if (!info) {
+      return { fillColor: NO_DATA_FILL, fillOpacity: 0.4, color: "#ffffff", weight: 1, dashArray: "3,3" };
+    }
+    return {
+      fillColor: RISK_FILL[info.level],
+      fillOpacity: isPinned || isHovered ? 1 : 0.82,
+      color: isPinned ? "#0A1833" : "#ffffff",
+      weight: isPinned ? 3 : isHovered ? 2.5 : 1.3,
+    };
+  }
+
+  function onEachDistrictFeature(feature, layer) {
+    const matched = feature.properties.matched;
+    const info = matched ? districtRiskMap[matched] : null;
+    layer.bindTooltip(
+      `<div class="state-tooltip">${matched || feature.properties.district}${
+        info ? ` · Risk ${info.avgRisk}/100 · ${info.count} projects` : " · No sample data"
+      }</div>`,
+      { sticky: true }
+    );
+    layer.on({
+      mouseover: () => {
+        setHoveredDistrict(matched);
+        layer.bringToFront();
+      },
+      mouseout: () => setHoveredDistrict(null),
+      click: () => {
+        if (info) focusDistrict(info, layer.getBounds());
+        else mapRef.current?.flyToBounds(layer.getBounds(), { padding: [90, 90], duration: 0.5 });
+      },
+    });
+  }
+
   const selectedBucket = selectedState ? riskSummary[selectedState] : null;
 
   const filteredStateOptions = useMemo(() => {
@@ -136,16 +224,16 @@ export default function MapPage() {
         <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div>
             <h1 className="font-display text-2xl font-bold text-ink-900">India Map — Risk Overview</h1>
-            <p className="mt-1 text-sm text-ink-500">Click a state to zoom in and see its district-level risk breakdown.</p>
+            <p className="mt-1 text-sm text-ink-500">Click a state to zoom in and reveal real district boundaries — click a district to zoom further and drop a pin.</p>
           </div>
         </div>
 
-        <div className="relative h-[620px] overflow-hidden rounded-xl2 border border-ink-200 shadow-cardHover">
+        <div className="relative h-[640px] overflow-hidden rounded-xl2 border border-ink-200 shadow-cardHover">
           <MapContainer
             center={[22.9, 82]}
             zoom={4.6}
             minZoom={4.2}
-            maxZoom={7.5}
+            maxZoom={10.5}
             zoomControl={false}
             maxBoundsViscosity={1.0}
             className="h-full w-full"
@@ -153,6 +241,38 @@ export default function MapPage() {
           >
             <MapRefSetter mapRef={mapRef} />
             <GeoJSON ref={geoRef} data={indiaStatesGeo} style={styleFeature} onEachFeature={onEachFeature} />
+
+            {districtGeoJson && (
+              <GeoJSON
+                key={`${selectedState}-districts`}
+                data={districtGeoJson}
+                style={styleDistrictFeature}
+                onEachFeature={onEachDistrictFeature}
+              />
+            )}
+
+            {pin && (
+              <Marker position={pin.center} icon={pinIcon(RISK_FILL[pin.level])}>
+                <Popup>
+                  <div className="min-w-[180px] font-sans">
+                    <p className="font-semibold text-ink-900">{pin.name}</p>
+                    <p className="mt-1 text-xs text-ink-500">
+                      {pin.code} · {pin.count} project{pin.count === 1 ? "" : "s"}
+                    </p>
+                    <p className="mt-1 text-xs font-semibold" style={{ color: RISK_FILL[pin.level] }}>
+                      Risk {pin.avgRisk}/100 — {pin.level}
+                    </p>
+                    <button
+                      onClick={() => navigate("/dashboard", { state: { presetDistrictCode: pin.code } })}
+                      className="mt-2.5 w-full rounded-md bg-brand-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
+                    >
+                      View Projects
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+
             <ZoomControl position="bottomright" />
           </MapContainer>
 
@@ -198,6 +318,12 @@ export default function MapPage() {
             )}
           </div>
 
+          {districtLoading && (
+            <div className="absolute left-1/2 top-4 z-[400] flex -translate-x-1/2 items-center gap-2 rounded-lg border border-ink-200 bg-white/95 px-3.5 py-2 text-xs font-medium text-ink-600 shadow-panel backdrop-blur">
+              <Loader2 size={13} className="animate-spin text-brand-500" /> Loading district boundaries…
+            </div>
+          )}
+
           <button
             onClick={resetView}
             className="absolute right-4 top-4 z-[400] flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white/95 px-3 py-2 text-xs font-semibold text-ink-600 shadow-panel backdrop-blur hover:text-brand-600"
@@ -213,6 +339,12 @@ export default function MapPage() {
                 {l} Risk
               </div>
             ))}
+            {districtGeoJson && (
+              <div className="mt-1.5 flex items-center gap-2 border-t border-ink-100 pt-1.5 text-[11px] text-ink-400">
+                <span className="h-3 w-3 rounded-full border border-dashed border-ink-300" style={{ background: NO_DATA_FILL }} />
+                No sample data
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -301,35 +433,29 @@ export default function MapPage() {
 
           {selectedState && (
             <div className="space-y-2">
-              {districts.map((d) => {
-                const level = d.avgRisk >= 65 ? "High" : d.avgRisk >= 35 ? "Medium" : "Low";
-                return (
-                  <button
-                    key={d.code}
-                    onClick={() => navigate("/dashboard", { state: { presetDistrictCode: d.code } })}
-                    className="flex w-full flex-col gap-1.5 rounded-lg border border-ink-100 px-3 py-2.5 text-left text-sm transition-colors hover:border-brand-300 hover:bg-brand-50/40"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-ink-900">{d.name}</p>
-                      <div className="flex items-center gap-2">
-                        <RiskBadge level={level} size="sm" />
-                        <ChevronRight size={14} className="text-ink-300" />
-                      </div>
-                    </div>
+              {districts.map((d) => (
+                <button
+                  key={d.code}
+                  onClick={() => navigate("/dashboard", { state: { presetDistrictCode: d.code } })}
+                  className="flex w-full flex-col gap-1.5 rounded-lg border border-ink-100 px-3 py-2.5 text-left text-sm transition-colors hover:border-brand-300 hover:bg-brand-50/40"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-ink-900">{d.name}</p>
                     <div className="flex items-center gap-2">
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
-                        <div
-                          className={classNames("h-full rounded-full")}
-                          style={{ width: `${d.avgRisk}%`, background: RISK_FILL[level] }}
-                        />
-                      </div>
-                      <span className="text-[11px] text-ink-400">
-                        {d.code} · {d.count} proj.
-                      </span>
+                      <RiskBadge level={d.level} size="sm" />
+                      <ChevronRight size={14} className="text-ink-300" />
                     </div>
-                  </button>
-                );
-              })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
+                      <div className="h-full rounded-full" style={{ width: `${d.avgRisk}%`, background: RISK_FILL[d.level] }} />
+                    </div>
+                    <span className="text-[11px] text-ink-400">
+                      {d.code} · {d.count} proj.
+                    </span>
+                  </div>
+                </button>
+              ))}
             </div>
           )}
         </div>

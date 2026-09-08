@@ -18,7 +18,7 @@ export const ROLE_LABELS = {
   [ROLES.MP]: "Member of Parliament",
   [ROLES.CITIZEN]: "Citizen",
   [ROLES.SNA]: "State Nodal Agency",
-  [ROLES.IDA]: "Implementing District Authority",
+  [ROLES.IDA]: "Implementing Agency",
   [ROLES.IA]: "Implementing Agency",
   [ROLES.ADMIN]: "Administrator",
 };

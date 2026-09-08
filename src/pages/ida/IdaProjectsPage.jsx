@@ -5,19 +5,17 @@ import { useDataStore } from "../../context/DataStoreContext";
 import { useToast } from "../../context/ToastContext";
 import { getProjectsByDistrictCode, PROJECT_STATUSES } from "../../data/mockData";
 import IdaProjectTable from "../../components/ida/IdaProjectTable";
-import AssignIAModal from "../../components/ida/AssignIAModal";
 
 export default function IdaProjectsPage() {
   const { profile } = useAuth();
-  const { assignImplementingAgency, updateProjectStatus, projectVersion } = useDataStore();
+  const { updateProjectStatus, projectVersion } = useDataStore();
   const { push } = useToast();
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [riskLevel, setRiskLevel] = useState("");
-  const [assignTarget, setAssignTarget] = useState(null);
 
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const projects = useMemo(() => getProjectsByDistrictCode(profile?.districtCode), [profile, projectVersion]);
 
   const filtered = useMemo(() => {
@@ -33,12 +31,6 @@ export default function IdaProjectsPage() {
     return data.sort((a, b) => b.riskScore - a.riskScore);
   }, [projects, search, status, riskLevel]);
 
-  const handleAssign = (projectId, assignment) => {
-    assignImplementingAgency(projectId, assignment);
-    setAssignTarget(null);
-    push(`Implementing Agency assigned successfully — ${assignment.agency}`, "success");
-  };
-
   const handleFlag = (project) => {
     updateProjectStatus(project.id, "Delayed");
     push(`${project.projectId} flagged for review`, "warning");
@@ -47,8 +39,8 @@ export default function IdaProjectsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-ink-900">District Projects — {profile?.district}</h1>
-        <p className="mt-1 text-sm text-ink-500">All MPLADS works sanctioned in your district.</p>
+        <h1 className="font-display text-2xl font-bold text-ink-900">Assigned Projects — {profile?.district}</h1>
+        <p className="mt-1 text-sm text-ink-500">MPLADS works assigned to your agency for execution in this district.</p>
       </div>
 
       <div className="flex flex-col gap-3 rounded-xl2 border border-ink-200 bg-white p-4 shadow-card sm:flex-row sm:items-center">
@@ -91,10 +83,8 @@ export default function IdaProjectsPage() {
         <div className="border-b border-ink-100 px-5 py-4">
           <h3 className="font-display text-base font-bold text-ink-900">{filtered.length} Projects</h3>
         </div>
-        <IdaProjectTable projects={filtered} onAssign={setAssignTarget} onFlag={handleFlag} />
+        <IdaProjectTable projects={filtered} onFlag={handleFlag} showAssign={false} />
       </div>
-
-      <AssignIAModal open={!!assignTarget} project={assignTarget} onClose={() => setAssignTarget(null)} onAssign={handleAssign} />
     </div>
   );
 }

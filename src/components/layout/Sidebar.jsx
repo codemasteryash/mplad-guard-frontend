@@ -35,8 +35,7 @@ function getNavItems(role) {
   if (role === ROLES.IDA) {
     return [
       { label: "Dashboard", to: "/ida/dashboard", icon: LayoutDashboard },
-      { label: "Projects", to: "/ida/projects", icon: ClipboardList },
-      { label: "Assign IA", to: "/ida/assign-agency", icon: UserCog },
+      { label: "Assigned Projects", to: "/ida/projects", icon: ClipboardList },
       { label: "Field Verification", to: "/ida/verification", icon: ShieldCheck },
       { label: "Risk Monitoring", to: "/ida/risk", icon: AlertTriangle },
       { label: "Complaints", to: "/ida/complaints", icon: MessageSquareWarning },
@@ -57,6 +56,7 @@ function getNavItems(role) {
     base.push({ label: "My Complaints", to: "/complaints", icon: MessageSquareWarning });
   }
   if (role === ROLES.DISTRICT_AUTHORITY) {
+    base.push({ label: "Assign IA", to: "/ida/assign-agency", icon: UserCog });
     base.push({ label: "Complaints Review", to: "/complaints", icon: MessageSquareWarning });
   }
 
