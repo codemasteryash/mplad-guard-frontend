@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Landmark, UserRound, Users, Building2, ClipboardCheck, ArrowLeft, LockKeyhole, CheckSquare, Radar } from "lucide-react";
+import { Landmark, UserRound, Users, Building2, ClipboardCheck, ArrowLeft, LockKeyhole, CheckSquare, Radar, Eye, EyeOff } from "lucide-react";
 import { useAuth, ROLES, ROLE_LABELS } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { STATES } from "../data/mockData";
+import { loginUser } from "../services/api";
 import Button from "../components/common/Button";
 import Logo from "../components/common/Logo";
 import IndiaOutline from "../components/common/IndiaOutline";
@@ -42,222 +42,66 @@ const ROLE_CARDS = [
   },
 ];
 
-function StateSelect({ value, onChange, label = "State", required }) {
+function TextField({ label, value, onChange, required, type = "text", placeholder, autoComplete, allowPasswordToggle }) {
+  const [visible, setVisible] = useState(false);
+  const inputType = allowPasswordToggle && visible ? "text" : type;
+
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink-700">
         {label} {required && <span className="text-risk-high">*</span>}
       </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        className="w-full rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 focus:border-brand-500"
-      >
-        <option value="">Select State</option>
-        {STATES.map((s) => (
-          <option key={s.code} value={s.name}>
-            {s.name}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <input
+          type={inputType}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          className="w-full rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 pr-11 text-sm text-ink-900 placeholder:text-ink-400 focus:border-brand-500"
+        />
+        {allowPasswordToggle && (
+          <button type="button" onClick={() => setVisible((current) => !current)} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-400 hover:text-ink-700" aria-label={visible ? "Hide password" : "Show password"}>
+            {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+          </button>
+        )}
+      </div>
     </label>
   );
 }
 
-function DistrictSelect({ state, value, onChange, label = "District", required }) {
-  const districts = STATES.find((s) => s.name === state)?.districts || [];
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-ink-700">
-        {label} {required && <span className="text-risk-high">*</span>}
-      </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        disabled={!state}
-        className="w-full rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 focus:border-brand-500 disabled:bg-ink-50 disabled:text-ink-400"
-      >
-        <option value="">{state ? "Select District" : "Select a state first"}</option>
-        {districts.map((d) => (
-          <option key={d.code} value={d.name}>
-            {d.name} ({d.code})
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
+function LoginForm({ onSubmit, loading, error }) {
+  const [form, setForm] = useState({ username: "", password: "" });
 
-function TextField({ label, value, onChange, required, type = "text", placeholder }) {
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    onSubmit(form);
+  };
+
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-ink-700">
-        {label} {required && <span className="text-risk-high">*</span>}
-      </span>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        placeholder={placeholder}
-        className="w-full rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-brand-500"
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <TextField
+        label="Username"
+        value={form.username}
+        onChange={(value) => setForm((current) => ({ ...current, username: value }))}
+        required
+        placeholder="Enter your username"
+        autoComplete="username"
       />
-    </label>
-  );
-}
-
-function DistrictAuthorityForm({ onSubmit }) {
-  const [form, setForm] = useState({ name: "", employeeId: "", state: "", district: "", designation: "" });
-  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v, ...(k === "state" ? { district: "" } : {}) }));
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const districtObj = STATES.find((s) => s.name === form.state)?.districts.find((d) => d.name === form.district);
-    onSubmit({
-      name: form.name,
-      employeeId: form.employeeId,
-      state: form.state,
-      district: form.district,
-      districtCode: districtObj?.code,
-      pincode: districtObj?.pincode,
-      designation: form.designation || "District Nodal Officer",
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <TextField label="Full Name" value={form.name} onChange={set("name")} required placeholder="e.g. Rakesh Sharma" />
-      <TextField label="Employee / Officer ID" value={form.employeeId} onChange={set("employeeId")} required placeholder="e.g. DA-2024-0451" />
-      <StateSelect value={form.state} onChange={set("state")} required />
-      <DistrictSelect state={form.state} value={form.district} onChange={set("district")} required />
-      <TextField label="Designation (optional)" value={form.designation} onChange={set("designation")} placeholder="e.g. District Nodal Officer" />
-      <Button type="submit" className="w-full" size="lg">
-        Login as District Authority
-      </Button>
-    </form>
-  );
-}
-
-function IdaForm({ onSubmit }) {
-  const [form, setForm] = useState({ name: "", employeeId: "", state: "", district: "", designation: "" });
-  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v, ...(k === "state" ? { district: "" } : {}) }));
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const districtObj = STATES.find((s) => s.name === form.state)?.districts.find((d) => d.name === form.district);
-    onSubmit({
-      name: form.name,
-      employeeId: form.employeeId,
-      state: form.state,
-      district: form.district,
-      districtCode: districtObj?.code,
-      pincode: districtObj?.pincode,
-      designation: form.designation || "Implementing District Authority",
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <TextField label="Full Name" value={form.name} onChange={set("name")} required placeholder="e.g. Rakesh Sharma" />
-      <TextField label="Employee / Officer ID" value={form.employeeId} onChange={set("employeeId")} required placeholder="e.g. IDA-2026-0451" />
-      <StateSelect value={form.state} onChange={set("state")} required />
-      <DistrictSelect state={form.state} value={form.district} onChange={set("district")} required />
-      <TextField label="Designation (optional)" value={form.designation} onChange={set("designation")} placeholder="e.g. District Collector" />
-      <Button type="submit" className="w-full" size="lg">
-        Login as IDA
-      </Button>
-    </form>
-  );
-}
-
-function SnaForm({ onSubmit }) {
-  const [form, setForm] = useState({ name: "", employeeId: "", state: "", designation: "" });
-  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({
-      name: form.name,
-      employeeId: form.employeeId,
-      state: form.state,
-      designation: form.designation || "State Nodal Officer",
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <TextField label="Full Name" value={form.name} onChange={set("name")} required placeholder="e.g. Anjali Desai" />
-      <TextField label="Employee / Officer ID" value={form.employeeId} onChange={set("employeeId")} required placeholder="e.g. SNA-2026-0451" />
-      <StateSelect value={form.state} onChange={set("state")} required />
-      <TextField label="Designation (optional)" value={form.designation} onChange={set("designation")} placeholder="e.g. State Nodal Officer" />
-      <Button type="submit" className="w-full" size="lg">
-        Login as SNA
-      </Button>
-    </form>
-  );
-}
-
-
-
-function MpForm({ onSubmit }) {
-  const [form, setForm] = useState({ name: "", house: "Lok Sabha", state: "", constituency: "" });
-  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({ ...form });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <TextField label="Full Name" value={form.name} onChange={set("name")} required placeholder="e.g. Anita Verma" />
-      <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink-700">
-          House <span className="text-risk-high">*</span>
-        </span>
-        <div className="flex gap-2">
-          {["Lok Sabha", "Rajya Sabha"].map((h) => (
-            <button
-              type="button"
-              key={h}
-              onClick={() => set("house")(h)}
-              className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
-                form.house === h ? "border-brand-500 bg-brand-50 text-brand-700" : "border-ink-200 text-ink-600"
-              }`}
-            >
-              {h}
-            </button>
-          ))}
-        </div>
-      </label>
-      <StateSelect value={form.state} onChange={set("state")} required />
-      <TextField label="Constituency" value={form.constituency} onChange={set("constituency")} required placeholder="e.g. North Constituency" />
-      <Button type="submit" className="w-full" size="lg">
-        Login as MP
-      </Button>
-    </form>
-  );
-}
-
-function CitizenForm({ onSubmit }) {
-  const [form, setForm] = useState({ name: "", mobile: "", state: "", district: "" });
-  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v, ...(k === "state" ? { district: "" } : {}) }));
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({ ...form });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <TextField label="Full Name" value={form.name} onChange={set("name")} required placeholder="e.g. Priya Singh" />
-      <TextField label="Mobile Number" value={form.mobile} onChange={set("mobile")} required type="tel" placeholder="10-digit mobile number" />
-      <StateSelect value={form.state} onChange={set("state")} label="State (optional)" />
-      <DistrictSelect state={form.state} value={form.district} onChange={set("district")} label="District (optional)" />
-      <Button type="submit" className="w-full" size="lg">
-        Login as Citizen
+      <TextField
+        label="Password"
+        value={form.password}
+        onChange={(value) => setForm((current) => ({ ...current, password: value }))}
+        required
+        type="password"
+        placeholder="Enter your password"
+        autoComplete="current-password"
+        allowPasswordToggle
+      />
+      {error && <p className="rounded-lg bg-risk-high/10 px-3 py-2 text-sm text-risk-high">{error}</p>}
+      <Button type="submit" className="w-full" size="lg" disabled={loading}>
+        {loading ? "Signing in..." : "Sign in"}
       </Button>
     </form>
   );
@@ -265,6 +109,8 @@ function CitizenForm({ onSubmit }) {
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const { login } = useAuth();
   const { push } = useToast();
   const navigate = useNavigate();
@@ -276,10 +122,41 @@ export default function LoginPage() {
     return "/dashboard";
   };
 
-  const handleSubmit = (role) => (profile) => {
-    login(role, profile);
-    push(`Welcome, ${profile.name || "User"}. Logged in as ${ROLE_LABELS[role]}.`, "success");
-    navigate(location.state?.from || defaultRouteForRole(role), { replace: true });
+  const expectedBackendRole = (role) => {
+    if (role === ROLES.SNA) return "STATE_NODAL";
+    if (role === ROLES.IDA) return "IMPLEMENTING_AGENCY";
+    return role;
+  };
+
+  const frontendRoleForBackendRole = (role) => {
+    if (role === "STATE_NODAL") return ROLES.SNA;
+    if (role === "IMPLEMENTING_AGENCY") return ROLES.IDA;
+    return role;
+  };
+
+  const handleSubmit = async ({ username, password }) => {
+    setLoading(true);
+    setError("");
+    try {
+      const { user } = await loginUser(username, password);
+      const frontendRole = frontendRoleForBackendRole(user.role);
+      if (frontendRole !== selectedRole && user.role !== expectedBackendRole(selectedRole)) {
+        throw new Error(`This account is not a ${ROLE_LABELS[selectedRole]} account.`);
+      }
+
+      const profile = {
+        ...user,
+        name: user.fullName,
+        employeeId: user.officerId,
+      };
+      login(frontendRole, profile);
+      push(`Welcome, ${user.fullName || "User"}. Logged in as ${ROLE_LABELS[frontendRole]}.`, "success");
+      navigate(location.state?.from || defaultRouteForRole(frontendRole), { replace: true });
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || requestError.message || "Unable to sign in.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -337,7 +214,10 @@ export default function LoginPage() {
                   ))}
                 </div>
                 <p className="mt-6 text-center text-xs text-ink-400">
-                  This is a demo prototype — no real credentials are required.
+                  Use the username and password provided by your administrator.
+                </p>
+                <p className="mt-3 text-center text-sm text-ink-500">
+                  Citizen? <Link to="/register/citizen" className="font-semibold text-brand-600 hover:text-brand-700">Create an account</Link>
                 </p>
               </motion.div>
             ) : (
@@ -352,14 +232,9 @@ export default function LoginPage() {
                   Login as {ROLE_LABELS[selectedRole]}
                 </h1>
                 <p className="mt-1.5 mb-6 text-sm text-ink-500">
-                  Fill in your details to continue — this is a demo login, no verification needed.
+                  Enter your backend account credentials to continue.
                 </p>
-
-                {selectedRole === ROLES.DISTRICT_AUTHORITY && <DistrictAuthorityForm onSubmit={handleSubmit(selectedRole)} />}
-                {selectedRole === ROLES.MP && <MpForm onSubmit={handleSubmit(selectedRole)} />}
-                {selectedRole === ROLES.CITIZEN && <CitizenForm onSubmit={handleSubmit(selectedRole)} />}
-                {selectedRole === ROLES.SNA && <SnaForm onSubmit={handleSubmit(selectedRole)} />}
-                {selectedRole === ROLES.IDA && <IdaForm onSubmit={handleSubmit(selectedRole)} />}
+                <LoginForm onSubmit={handleSubmit} loading={loading} error={error} />
               </motion.div>
             )}
           </AnimatePresence>

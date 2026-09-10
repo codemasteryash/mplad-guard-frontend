@@ -1,16 +1,17 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { logoutUser } from "../services/api";
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = "mplads_sentinel_session";
 
 export const ROLES = {
-  DISTRICT_AUTHORITY: "district_authority",
-  MP: "mp",
-  CITIZEN: "citizen",
-  SNA: "sna",
-  IDA: "ida",
-  IA: "ia",
-  ADMIN: "admin",
+  DISTRICT_AUTHORITY: "DISTRICT_AUTHORITY",
+  MP: "MP",
+  CITIZEN: "CITIZEN",
+  SNA: "SNA",
+  IDA: "IDA",
+  IA: "IA",
+  ADMIN: "ADMIN",
 };
 
 export const ROLE_LABELS = {
@@ -26,7 +27,8 @@ export const ROLE_LABELS = {
 function readStoredSession() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const session = raw ? JSON.parse(raw) : null;
+    return session?.role ? { ...session, role: session.role.toUpperCase() } : session;
   } catch {
     return null;
   }
@@ -41,10 +43,17 @@ export function AuthProvider({ children }) {
   }, [session]);
 
   const login = (role, profile) => {
-    setSession({ role, profile, loggedInAt: new Date().toISOString() });
+    setSession({ role: role.toUpperCase(), profile, loggedInAt: new Date().toISOString() });
   };
 
-  const logout = () => setSession(null);
+  const logout = async () => {
+    setSession(null);
+    try {
+      await logoutUser();
+    } catch {
+      // Local cleanup still logs the user out when the API is unavailable.
+    }
+  };
 
   const value = useMemo(
     () => ({

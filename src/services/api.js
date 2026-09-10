@@ -27,11 +27,12 @@ import {
 import { getStateFundSummary, getMpRosterByState, getSnaAlerts } from "../data/snaData";
 import { getDistrictSummary, IDA_AGENCY_OPTIONS } from "../data/idaData";
 
-const USE_MOCKS = true;
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS !== "false";
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api",
   timeout: 10000,
+  withCredentials: true,
 });
 
 export const aiClient = axios.create({
@@ -40,6 +41,25 @@ export const aiClient = axios.create({
 });
 
 const delay = (ms = 350) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function loginUser(username, password) {
+  const { data } = await apiClient.post("/auth/login", { username, password });
+  return data;
+}
+
+export async function logoutUser() {
+  await apiClient.post("/auth/logout");
+}
+
+export async function registerCitizen(payload) {
+  const { data } = await apiClient.post("/auth/register/citizen", payload);
+  return data;
+}
+
+export async function createStaffAccount(payload) {
+  const { data } = await apiClient.post("/auth/staff", payload);
+  return data;
+}
 
 /**
  * List + filter projects.

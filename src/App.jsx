@@ -13,6 +13,9 @@ import ScorecardPage from "./pages/ScorecardPage";
 import RecommendationPage from "./pages/RecommendationPage";
 import ComplaintPage from "./pages/ComplaintPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import CitizenRegisterPage from "./pages/CitizenRegisterPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 const MapPage = lazy(() => import("./pages/MapPage"));
 const ReportsPage = lazy(() => import("./pages/ReportsPage"));
@@ -55,6 +58,16 @@ export default function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register/citizen" element={<CitizenRegisterPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={[ROLES.ADMIN]} unauthorizedPath="/admin/login">
+                    <AdminDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
 
               <Route
                 element={

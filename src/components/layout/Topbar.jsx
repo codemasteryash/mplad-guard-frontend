@@ -28,7 +28,7 @@ export default function Topbar({ onMenuClick }) {
   }, []);
 
   const handleLogout = () => {
-    logout();
+    void logout();
     navigate("/");
   };
 
