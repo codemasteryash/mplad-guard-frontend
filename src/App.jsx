@@ -33,6 +33,8 @@ const IdaRiskPage = lazy(() => import("./pages/ida/IdaRiskPage"));
 const IdaComplaintsPage = lazy(() => import("./pages/ida/IdaComplaintsPage"));
 const FieldVerificationPage = lazy(() => import("./pages/ida/FieldVerificationPage"));
 const FieldVerificationDetailPage = lazy(() => import("./pages/ida/FieldVerificationDetailPage"));
+const UploadProgressPage = lazy(() => import("./pages/ida/UploadProgressPage"));
+
 
 function PageFallback() {
   return (
@@ -284,6 +286,26 @@ export default function App() {
                     <ProtectedRoute allowedRoles={[ROLES.IDA, ROLES.ADMIN]}>
                       <Lazy>
                         <ReportsPage />
+                      </Lazy>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ida/upload-progress"
+                  element={
+                    <ProtectedRoute allowedRoles={[ROLES.IDA, ROLES.ADMIN]}>
+                      <Lazy>
+                        <UploadProgressPage />
+                      </Lazy>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ida/upload-progress/:projectId"
+                  element={
+                    <ProtectedRoute allowedRoles={[ROLES.IDA, ROLES.ADMIN]}>
+                      <Lazy>
+                        <UploadProgressPage />
                       </Lazy>
                     </ProtectedRoute>
                   }

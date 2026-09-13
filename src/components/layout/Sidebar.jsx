@@ -13,6 +13,7 @@ import {
   Landmark as LandmarkIcon,
   AlertTriangle,
   UserCog,
+  UploadCloud,
 } from "lucide-react";
 import { ROLES } from "../../context/AuthContext";
 import { classNames } from "../../utils/format";
@@ -37,6 +38,7 @@ function getNavItems(role) {
       { label: "Dashboard", to: "/ida/dashboard", icon: LayoutDashboard },
       { label: "Assigned Projects", to: "/ida/projects", icon: ClipboardList },
       { label: "Field Verification", to: "/ida/verification", icon: ShieldCheck },
+      { label: "Upload Progress", to: "/ida/upload-progress", icon: UploadCloud },
       { label: "Risk Monitoring", to: "/ida/risk", icon: AlertTriangle },
       { label: "Complaints", to: "/ida/complaints", icon: MessageSquareWarning },
       { label: "Alerts", to: "/ida/alerts", icon: Bell },

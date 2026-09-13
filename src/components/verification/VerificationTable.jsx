@@ -4,7 +4,7 @@ import { formatFullINR, classNames } from "../../utils/format";
 import { RiskBadge, StatusBadge } from "../common/Badge";
 import { EmptyState } from "../common/EmptyState";
 
-export default function VerificationTable({ projects, getStatus, onUpload }) {
+export default function VerificationTable({ projects, getStatus }) {
   const navigate = useNavigate();
 
   if (projects.length === 0) {
@@ -36,9 +36,7 @@ export default function VerificationTable({ projects, getStatus, onUpload }) {
             return (
               <tr key={p.id} className="border-b border-ink-50 hover:bg-brand-50/30">
                 <td className="whitespace-nowrap px-4 py-3.5 font-semibold text-navy-700">{p.projectId}</td>
-                <td className="max-w-[200px] truncate px-4 py-3.5 text-ink-700" title={p.description}>
-                  {p.description}
-                </td>
+                <td className="max-w-[200px] truncate px-4 py-3.5 text-ink-700" title={p.description}>{p.description}</td>
                 <td className="px-4 py-3.5 text-ink-700">{p.district}</td>
                 <td className="px-4 py-3.5 text-ink-700">{p.pincode}</td>
                 <td className="px-4 py-3.5 text-ink-700">{p.assignedIA}</td>
@@ -52,24 +50,19 @@ export default function VerificationTable({ projects, getStatus, onUpload }) {
                 </td>
                 <td className="whitespace-nowrap px-4 py-3.5 text-ink-700">{formatFullINR(p.amountAllocated)}</td>
                 <td className="whitespace-nowrap px-4 py-3.5 text-ink-700">{formatFullINR(utilized)}</td>
-                <td className="px-4 py-3.5">
-                  <RiskBadge level={p.riskLevel} size="sm" />
-                </td>
-                <td className="px-4 py-3.5">
-                  <StatusBadge status={record.status} />
-                </td>
+                <td className="px-4 py-3.5"><RiskBadge level={p.riskLevel} size="sm" /></td>
+                <td className="px-4 py-3.5"><StatusBadge status={record.status} /></td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => navigate(`/ida/verification/${encodeURIComponent(p.id)}`)}
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-400 hover:bg-navy-50 hover:text-navy-700"
-                      aria-label="View verification detail"
-                      title="View"
+                      aria-label="View verification detail" title="View"
                     >
                       <Eye size={15} />
                     </button>
                     <button
-                      onClick={() => onUpload(p)}
+                      onClick={() => navigate(`/ida/upload-progress/${encodeURIComponent(p.id)}`)}
                       className="flex items-center gap-1.5 rounded-lg border border-ink-200 px-2.5 py-1.5 text-xs font-semibold text-ink-600 hover:border-brand-300 hover:text-brand-600"
                     >
                       <UploadCloud size={13} /> Upload Update
