@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Menu, Search, Bell, HelpCircle, ChevronDown, LogOut, User } from "lucide-react";
 import { useAuth, ROLE_LABELS } from "../../context/AuthContext";
 import { classNames } from "../../utils/format";
+import { logoutUser } from "../../services/api";
 
 const MOCK_NOTIFICATIONS = [
   { id: 1, title: "High risk project flagged", body: "MP/2024/00182 crossed 80 risk score", time: "12m ago", tone: "high" },
@@ -27,9 +28,13 @@ export default function Topbar({ onMenuClick }) {
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } finally {
+      logout();
+      navigate("/");
+    }
   };
 
   return (

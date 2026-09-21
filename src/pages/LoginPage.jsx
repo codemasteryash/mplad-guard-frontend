@@ -3,16 +3,18 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Landmark, UserRound, Users, Building2, ClipboardCheck,
-  ArrowLeft, LockKeyhole, CheckSquare, Radar, Eye, EyeOff,
+  ArrowLeft, LockKeyhole, CheckSquare, Radar, Eye, EyeOff, Copy, Check,
 } from "lucide-react";
 import { useAuth, ROLES, ROLE_LABELS } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { clearAccessToken, loginUser } from "../services/api";
 import { STATES } from "../data/mockData";
-import { createSeededRandom } from "../utils/seededRandom";
 import { classNames } from "../utils/format";
+import { registerCitizen, registerStaff } from "../services/api";
 import Button from "../components/common/Button";
 import Logo from "../components/common/Logo";
 import IndiaOutline from "../components/common/IndiaOutline";
+import Modal from "../components/common/Modal";
 
 const ROLE_CARDS = [
   { role: ROLES.DISTRICT_AUTHORITY, icon: Landmark, title: "District Authority", desc: "Access district level dashboards and approvals" },
@@ -21,42 +23,6 @@ const ROLE_CARDS = [
   { role: ROLES.SNA, icon: Building2, title: "State Nodal Agency", desc: "Manage and oversee state-level MPLADS fund allocation" },
   { role: ROLES.IDA, icon: ClipboardCheck, title: "Implementing Agency", desc: "Execute works, verify progress, and report on-site evidence" },
 ];
-
-// ---------------------------------------------------------------------------
-// Deterministic profile derivation for the "Login" (username/password) path.
-// There's no real backend/credential store in this prototype, so a
-// government-admin-issued account is simulated: the same username always
-// resolves to the same state/district scope (seeded off the username), so a
-// login is repeatable across demo runs without needing a real directory.
-// ---------------------------------------------------------------------------
-function buildProfileFromCredentials(role, username) {
-  const rand = createSeededRandom(`login-${role}-${username.trim().toLowerCase()}`);
-  const state = rand.pick(STATES);
-  const district = rand.pick(state.districts);
-  const displayName =
-    username
-      .replace(/[_.]+/g, " ")
-      .replace(/\d+/g, "")
-      .trim()
-      .replace(/\b\w/g, (c) => c.toUpperCase()) || "Government Official";
-
-  const base = { name: displayName, employeeId: username };
-
-  switch (role) {
-    case ROLES.DISTRICT_AUTHORITY:
-      return { ...base, state: state.name, district: district.name, districtCode: district.code, pincode: district.pincode, designation: "District Nodal Officer" };
-    case ROLES.IDA:
-      return { ...base, state: state.name, district: district.name, districtCode: district.code, pincode: district.pincode, designation: "Implementing Agency Officer" };
-    case ROLES.MP:
-      return { ...base, state: state.name, constituency: district.name, house: "Lok Sabha" };
-    case ROLES.CITIZEN:
-      return { ...base, state: state.name, district: district.name };
-    case ROLES.SNA:
-      return { ...base, state: state.name, designation: "State Nodal Officer" };
-    default:
-      return base;
-  }
-}
 
 function StateSelect({ value, onChange, label = "State", required }) {
   return (
@@ -182,13 +148,14 @@ function MpForm({ onSubmit }) {
 }
 
 function CitizenForm({ onSubmit }) {
-  const [form, setForm] = useState({ name: "", mobile: "", state: "", district: "" });
+  const [form, setForm] = useState({ name: "", mobile: "", password: "", state: "", district: "" });
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v, ...(k === "state" ? { district: "" } : {}) }));
   const handleSubmit = (e) => { e.preventDefault(); onSubmit({ ...form }); };
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <TextField label="Full Name" value={form.name} onChange={set("name")} required placeholder="e.g. Priya Singh" />
       <TextField label="Mobile Number" value={form.mobile} onChange={set("mobile")} required type="tel" placeholder="10-digit mobile number" />
+      <TextField label="Password" value={form.password} onChange={set("password")} required type="password" placeholder="Create a password" />
       <StateSelect value={form.state} onChange={set("state")} label="State (optional)" />
       <DistrictSelect state={form.state} value={form.district} onChange={set("district")} label="District (optional)" />
       <Button type="submit" className="w-full" size="lg">Register as Citizen</Button>
@@ -255,6 +222,14 @@ export default function LoginPage() {
   const { push } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const [generatedCredentials, setGeneratedCredentials] = useState(null);
+  const [copiedCredential, setCopiedCredential] = useState(null);
+
+  const copyCredential = async (field, value) => {
+    await navigator.clipboard.writeText(value);
+    setCopiedCredential(field);
+    setTimeout(() => setCopiedCredential(null), 1800);
+  };
 
   const defaultRouteForRole = (role) => {
     if (role === ROLES.SNA) return "/sna/dashboard";
@@ -268,17 +243,85 @@ export default function LoginPage() {
     navigate(location.state?.from || defaultRouteForRole(role), { replace: true });
   };
 
-  const handleRegisterSubmit = (role) => (profile) => completeLogin(role, profile);
+  const handleRegisterSubmit = (role) => async (profile) => {
+    try {
+      if (role === ROLES.CITIZEN) {
+        const result = await registerCitizen({
+          fullName: profile.name,
+          phone: profile.mobile,
+          password: profile.password,
+        });
+        completeLogin(ROLES.CITIZEN, {
+          name: result.user.fullName,
+          employeeId: result.user.username,
+          username: result.user.username,
+          state: result.user.state,
+          district: result.user.district,
+        });
+        return;
+      }
 
-  const handleLoginSubmit = (role) => ({ username }) => {
-    const profile = buildProfileFromCredentials(role, username);
-    completeLogin(role, profile);
+      const backendRole = {
+        [ROLES.DISTRICT_AUTHORITY]: "DISTRICT_AUTHORITY",
+        [ROLES.MP]: "MP",
+        [ROLES.SNA]: "STATE_NODAL",
+        [ROLES.IDA]: "IMPLEMENTING_AGENCY",
+      }[role];
+      const result = await registerStaff({
+        role: backendRole,
+        fullName: profile.name,
+        officerId: profile.employeeId,
+        state: profile.state,
+        district: profile.district,
+        designation: profile.designation,
+        house: profile.house,
+        constituency: profile.constituency,
+      });
+      setGeneratedCredentials(result.credentials);
+      setMode("login");
+    } catch (error) {
+      push(error.response?.data?.error || error.message || "Registration failed.", "error");
+    }
+  };
+
+  const handleLoginSubmit = (selectedRole) => async ({ username, password }) => {
+    try {
+      const user = await loginUser(username, password);
+      const roleMap = {
+        ADMIN: ROLES.ADMIN,
+        MINISTRY: ROLES.ADMIN,
+        STATE_NODAL: ROLES.SNA,
+        DISTRICT_AUTHORITY: ROLES.DISTRICT_AUTHORITY,
+        MP: ROLES.MP,
+        IMPLEMENTING_AGENCY: ROLES.IDA,
+        CITIZEN: ROLES.CITIZEN,
+      };
+      const backendRole = roleMap[user.role];
+      if (!backendRole) throw new Error("This account has an unsupported role.");
+      if (backendRole !== selectedRole) {
+        throw new Error(`These credentials belong to ${ROLE_LABELS[backendRole]}. Select that role to continue.`);
+      }
+      completeLogin(backendRole, {
+        name: user.fullName,
+        employeeId: user.officerId || user.username,
+        username: user.username,
+        state: user.state,
+        district: user.district,
+        constituency: user.constituency,
+        house: user.house,
+        designation: user.designation,
+      });
+    } catch (error) {
+      clearAccessToken();
+      push(error.response?.data?.error || error.message || "Unable to sign in.", "error");
+    }
   };
 
   const selectRole = (role) => setSelectedRole(role);
   const backToSelect = () => setSelectedRole(null);
 
   return (
+    <>
     <div className="flex min-h-screen">
       <div className="relative hidden w-2/5 flex-col justify-between overflow-hidden bg-gradient-to-br from-navy-800 to-navy-950 p-10 text-white lg:flex">
         <IndiaOutline className="absolute -bottom-16 -right-16 h-96 w-96" fill="white" opacity={0.06} />
@@ -380,5 +423,49 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    <Modal
+      open={!!generatedCredentials}
+      onClose={() => setGeneratedCredentials(null)}
+      title="Account created successfully"
+      subtitle="Save these credentials before closing this window."
+      centered
+    >
+      <div className="space-y-5">
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-5 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">Username</p>
+          <div className="mt-2 flex items-center justify-center gap-3">
+            <p className="break-all font-mono text-2xl font-bold text-ink-900">{generatedCredentials?.username}</p>
+            <button
+              type="button"
+              onClick={() => copyCredential("username", generatedCredentials.username)}
+              className="shrink-0 rounded-lg p-2 text-brand-700 hover:bg-brand-100"
+              aria-label="Copy username"
+              title="Copy username"
+            >
+              {copiedCredential === "username" ? <Check size={20} /> : <Copy size={20} />}
+            </button>
+          </div>
+        </div>
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-5 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">Password</p>
+          <div className="mt-2 flex items-center justify-center gap-3">
+            <p className="break-all font-mono text-2xl font-bold text-ink-900">{generatedCredentials?.password}</p>
+            <button
+              type="button"
+              onClick={() => copyCredential("password", generatedCredentials.password)}
+              className="shrink-0 rounded-lg p-2 text-brand-700 hover:bg-brand-100"
+              aria-label="Copy password"
+              title="Copy password"
+            >
+              {copiedCredential === "password" ? <Check size={20} /> : <Copy size={20} />}
+            </button>
+          </div>
+        </div>
+        <Button className="w-full" size="lg" onClick={() => setGeneratedCredentials(null)}>
+          Close and continue to login
+        </Button>
+      </div>
+    </Modal>
+    </>
   );
 }
