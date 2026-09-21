@@ -27,17 +27,59 @@ import {
 import { getStateFundSummary, getMpRosterByState, getSnaAlerts } from "../data/snaData";
 import { getDistrictSummary, IDA_AGENCY_OPTIONS } from "../data/idaData";
 
-const USE_MOCKS = true;
+const USE_MOCKS = false;
+const ACCESS_TOKEN_KEY = "mplads_access_token";
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
+  withCredentials: false,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
 
 export const aiClient = axios.create({
-  baseURL: import.meta.env.VITE_AI_API_BASE_URL || "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000",
   timeout: 15000,
 });
+
+export async function loginUser(username, password) {
+  const { data } = await apiClient.post("/auth/login", { username, password });
+  localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+  return data.user;
+}
+
+export function clearAccessToken() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+}
+
+export async function fetchCurrentUser() {
+  const { data } = await apiClient.get("/auth/me");
+  return data.user;
+}
+
+export async function logoutUser() {
+  try {
+    await apiClient.post("/auth/logout");
+  } finally {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+  }
+}
+
+export async function registerStaff(payload) {
+  const { data } = await apiClient.post("/auth/register/staff", payload);
+  return data;
+}
+
+export async function registerCitizen(payload) {
+  const { data } = await apiClient.post("/auth/register/citizen", payload);
+  localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+  return data;
+}
 
 const delay = (ms = 350) => new Promise((resolve) => setTimeout(resolve, ms));
 

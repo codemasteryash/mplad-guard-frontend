@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function Modal({ open, onClose, title, subtitle, children, wide = false }) {
+export default function Modal({ open, onClose, title, subtitle, children, wide = false, centered = false }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -17,7 +17,7 @@ export default function Modal({ open, onClose, title, subtitle, children, wide =
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-10 sm:pt-16">
+        <div className={`fixed inset-0 z-50 flex justify-center overflow-y-auto p-4 ${centered ? "items-center" : "items-start pt-10 sm:pt-16"}`}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
